@@ -1,1 +1,1 @@
-# GoBasicProgramming
+# Изучение основ Golag
