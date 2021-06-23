@@ -2,52 +2,39 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"strings"
-	"unicode"
 )
 
 func main() {
-	//TODO
-	parsedSentences := parseSentences("abc")
-	fmt.Println(parsedSentences)
-
-}
-
-func parseSentences(text string) [][]string {
-	var parsedSentences = make([][]string, 0)
-
-	splitFunc := func(r rune) bool {
-		return strings.ContainsRune(".!?;:()", r)
+	file, err := os.Open("HarryPotterText.txt")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
+	defer file.Close()
 
-	sentences := strings.FieldsFunc(text, splitFunc)
-	for _, sentence := range sentences {
-		words := parseWords(sentence)
-		if len(words) > 0 {
-			parsedSentences = append(parsedSentences, words)
+	data := make([]byte, 64)
+
+	for {
+		_, err := file.Read(data)
+		if err == io.EOF {
+			break
 		}
 	}
-	return parsedSentences
-}
 
-func parseWords(sentence string) []string {
-	words := make([]string, 0)
-	var builder strings.Builder
-	builder.Grow(len(sentence))
-	for _, symbol := range sentence {
-		if isTrueSymbol(symbol) {
-			builder.WriteRune(symbol)
-		} else if builder.Len() > 0 {
-			words = append(words, strings.ToLower(builder.String()))
-			builder.Reset()
+	parsedSentences := parseSentences(string(data))
+	ngrams := getMostFrequentNextWords(parsedSentences)
+
+	for {
+		fmt.Println("Введите первое слово (например, harry): ")
+		beginning := ""
+		fmt.Fscan(os.Stdin, &beginning)
+		if beginning == "" {
+			break
 		}
+		phrase := continuePhrase(ngrams, strings.ToLower(beginning), 10)
+		fmt.Println(phrase)
 	}
-	if builder.Len() > 0 {
-		words = append(words, strings.ToLower(builder.String()))
-	}
-	return words
-}
-
-func isTrueSymbol(s rune) bool {
-	return unicode.IsLetter(s) || s == '\''
 }
